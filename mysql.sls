@@ -1,3 +1,5 @@
+{%- set ip = salt['grains.get']('ipv4')[0] -%}
+{%- set serv_id = salt['random.rand_int'](start=11,end=47) -%}
 # -*- coding: utf-8 -*-
 # vim: ft=yaml
 ---
@@ -18,124 +20,76 @@ mysql:
 
   server:
     # Use this account for database admin (defaults to root)
-    root_user: 'admin'
-    # root_password: '' - to have root@localhost without password
+    root_user: 'root'
     root_password: 'somepass'
-    root_password_hash: '*13883BDDBE566ECECC0501CDE9B293303116521A'
+    # root_password: '' # - to have root@localhost without password
+    # root_password_hash: '*13883BDDBE566ECECC0501CDE9B293303116521A'
     user: mysql
     # If you only manage the dbs and users and the server is on
     # another host
-    host: 123.123.123.123
+    host: localhost
     # my.cnf sections changes
     mysqld:
       # you can use either underscore or hyphen in param names
-      bind-address: 0.0.0.0
-      log_bin: /var/log/mysql/mysql-bin.log
-      datadir: /var/lib/mysql
-      port: 3307
-      binlog_do_db: foo
+      bind-address: {{ ip }}
+      datadir: /data/mysql
+      port: 3306
       auto_increment_increment: 5
-      binlog-ignore-db:
-        - mysql
-        - sys
-        - information_schema
-        - performance_schema
       explicit_defaults_for_timestamp: 1   # strict ansi supports sane defaults
+      log_bin_trust_function_creators: 1
+      event_scheduler: 1
+      server_id: {{ serv_id }}
+      log_bin: "replica-mysql-bin"
+      max_connections: 50000
+      transaction_isolation: 'READ-COMMITTED'
+      innodb_lock_wait_timeout: 600000
     mysql:
       # my.cnf param that not require value
       no-auto-rehash: noarg_present
 
   salt_user:
-    salt_user_name: 'salt'
-    salt_user_password: 'someotherpass'
+    salt_user_name: 'root'
+    salt_user_password: 'what'
     grants:
       - 'all privileges'
 
   # Manage config
-  config:
-    file: ~/.my.cnf
-    sections:
-      client:
-        port: 33306
-        socket: /var/lib/mysql-socket/mysql.sock
-      mysqld_safe:
-        plugin-dir: '~/mysql/plugins'
-      mysqld:
-        user: myself
-        port: 33306
-        datadir: ~/mysql/datadir
-    apparmor:
-      dir: /etc/apparmor.d/local
-      file: usr.sbin.mysqld
+  # config:
+  #   file: ~/.my.cnf
+  #   sections:
+  #     client:
+  #       port: 33306
+  #       socket: /var/lib/mysql-socket/mysql.sock
+  #     mysqld_safe:
+  #       plugin-dir: '~/mysql/plugins'
+  #     mysqld:
+  #       user: myself
+  #       port: 33306
+  #       datadir: ~/mysql/datadir
+  #   apparmor:
+  #     dir: /etc/apparmor.d/local
+  #     file: usr.sbin.mysqld
 
   # Manage databases
   database:
     # Simple definition using default charset and collate
-    - foo
+    - name: foo
+      present: false
     # Detailed definition
     - name: bar
       character_set: utf8
       collate: utf8_general_ci
+      present: false
     # Delete DB
     - name: obsolete_db
       present: false
-  schema:
-    foo:
-      load: true
-      source: salt://{{ tpldir }}/files/foo.schema
-    bar:
-      load: false
-    baz:
-      load: true
-      source: salt://{{ tpldir }}/files/baz.schema.tmpl
-      template: jinja
-    qux:
-      load: true
-      source: salt://{{ tpldir }}/files/qux.schema.tmpl
-      template: jinja
-      context:
-        encabulator: Turbo
-        girdlespring: differential
-    quux:
-      load: true
-      source: salt://{{ tpldir }}/files/qux.schema.tmpl
-      template: jinja
-      context:
-        encabulator: Retro
-        girdlespring: integral
 
   # Manage users
   # you can get pillar for existing server using scripts/import_users.py script
   user:
-    frank:
-      password: 'somepass'
-      host: localhost
-      databases:
-        - database: foo
-          grants: ['select', 'insert', 'update']
-          escape: true
-        - database: bar
-          grants: ['all privileges']
-    bob:
-      password_hash: '*6C8989366EAF75BB670AD8EA7A7FC1176A95CEF4'
-      host: '%'  # Any host
-      ssl: true
-      ssl-X509: true
-      ssl-SUBJECT: Subject
-      ssl-ISSUER: Name
-      ssl-CIPHER: Cipher
-      databases:
-        # https://github.com/saltstack/salt/issues/41178
-        # If you want to refer to databases using wildcards, turn off escape so
-        # the renderer does not escape them, enclose the string in '`' and
-        # use two '%'
-        - database: '`foo\_%%`'
-          grants: ['all privileges']
-          grant_option: true
-          escape: false
-        - database: bar
-          table: foobar
-          grants: ['select', 'insert', 'update', 'delete']
+    bantu:
+      password: 'sharubati'
+      host: '10.3.14.%'
 
     # User 'alice' will be allowed to connect to the server without password
     # as long as she has access to the unix socket.
@@ -143,25 +97,45 @@ mysql:
     alice:
       host: 'localhost'
       unix_socket: true
-    nopassuser:
-      password: ~
-      host: localhost
-      databases: []
-    application:
-      password: 'somepass'
-      mine_hosts:
-        target: "G@role:database and *.example.com"
-        function: "network.get_hostname"
-        expr_form: compound
-      databases:
-        - database: foo
-          grants: ['select', 'insert', 'update']
-
-    # Remove a user
-    obsoleteuser:
-      host: localhost
-      # defaults to true
       present: false
+    admin:
+      password: ']5zd7}TJF_.@'
+      host: '10.3.14.%'
+      present: true
+      databases:
+        - database: biko_sport
+          grants: ['all privileges']
+        - database: biko_sport_test
+          grants: ['all privileges']
+    api:
+      password: '26yjkhd4BchE'
+      host: '10.3.14.%'
+      present: true
+      databases:
+        - database: biko_sport
+          grants: ['all privileges']
+        - database: biko_sport_test
+          grants: ['all privileges']
+    apps:
+      password: 'OB95QjEW'
+      host: '10.3.14.%'
+      # host: 'localhost'
+      present: true
+      databases:
+        - database: biko_sport
+          grants: ['all privileges']
+        - database: biko_sport_test
+          grants: ['all privileges']
+    bob:
+      host: '%'
+      present: false
+    frank:
+      host: localhost
+      present: false
+    nopassuser:
+      host: localhost
+      present: false
+
 
   # Override any names defined in map.jinja
   # serverpkg: mysql-server
