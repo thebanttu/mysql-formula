@@ -1,5 +1,4 @@
 {%- set ip = salt['grains.get']('ipv4')[0] -%}
-{%- set serv_id = salt['random.rand_int'](start=11,end=47) -%}
 # -*- coding: utf-8 -*-
 # vim: ft=yaml
 ---
@@ -32,14 +31,12 @@ mysql:
     mysqld:
       # you can use either underscore or hyphen in param names
       bind-address: {{ ip }}
-      datadir: /data/mysql
+      datadir: /data1/mysql
       port: 3306
       auto_increment_increment: 5
       explicit_defaults_for_timestamp: 1   # strict ansi supports sane defaults
       log_bin_trust_function_creators: 1
       event_scheduler: 1
-      server_id: {{ serv_id }}
-      log_bin: "replica-mysql-bin"
       max_connections: 50000
       transaction_isolation: 'READ-COMMITTED'
       innodb_lock_wait_timeout: 600000
@@ -99,7 +96,7 @@ mysql:
       unix_socket: true
       present: false
     admin:
-      password: ']5zd7}TJF_.@'
+      password: 'xmulL5jYEFnH'
       host: '10.3.14.%'
       present: true
       databases:
