@@ -39,7 +39,10 @@ mysql:
       event_scheduler: 1
       max_connections: 50000
       transaction_isolation: 'READ-COMMITTED'
-      innodb_lock_wait_timeout: 600000
+      innodb_lock_wait_timeout: 65
+      lock_wait_timeout: 65
+      max_statement_time: 30000.428571
+
     mysql:
       # my.cnf param that not require value
       no-auto-rehash: noarg_present
